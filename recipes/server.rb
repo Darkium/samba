@@ -17,55 +17,49 @@
 # limitations under the License.
 #
 
-users = nil
-shares = data_bag_item(node["samba"]["shares_data_bag"], "shares")
+shares = data_bag_item(node['samba']['shares_data_bag'], 'shares')
 
-shares["shares"].each do |k,v|
-  if v.has_key?("path")
-    directory v["path"] do
+shares['shares'].each do |k, v|
+  if v.key?('path') # ~FC023
+    directory v['path'] do
       recursive true
     end
   end
 end
 
-unless node["samba"]["passdb_backend"] =~ /^ldapsam/
-  users = search(node["samba"]["users_data_bag"], "*:*")
+users = if node["samba"]["passdb_backend"] !=~ /^ldapsam/ && node['samba']['enable_users_search']
+  search(node['samba']['users_data_bag'], '*:*') # ~FC003
 end
 
-package value_for_platform(
-  ["ubuntu", "debian", "arch"] => { "default" => "samba" },
-  ["redhat", "centos", "fedora", "scientific", "amazon"] => { "default" => "samba3x" },
-  "default" => "samba"
-)
+package node['samba']['server_package']
+svcs = node['samba']['services']
 
-svcs = value_for_platform(
-  ["ubuntu", "debian"] => { "default" => ["smbd", "nmbd"] },
-  ["redhat", "centos", "fedora", "scientific", "amazon"] => { "default" => ["smb", "nmb"] },
-  "arch" => { "default" => [ "samba" ] },
-  "default" => ["smbd", "nmbd"]
-)
-
-svcs.each do |s|
-  service s do
-    pattern "smbd|nmbd" if node["platform"] =~ /^arch$/
-    action [:enable, :start]
-  end
-end
-
-template node["samba"]["config"] do
-  source "smb.conf.erb"
-  owner "root"
-  group "root"
+template node['samba']['config'] do
+  source 'smb.conf.erb'
+  owner 'root'
+  group 'root'
   mode 00644
-  variables :shares => shares["shares"]
-  notifies :restart, resources(:service => svcs)
+  variables :shares => shares['shares']
+  svcs.each do |s|
+    notifies :restart, "service[#{s}]"
+  end
 end
 
 if users
   users.each do |u|
-    samba_user u["id"] do
-      password u["smbpasswd"]
+    next unless u['smbpasswd']
+    samba_user u['id'] do
+      password u['smbpasswd']
       action [:create, :enable]
     end
+  end
+end
+
+svcs.each do |s|
+  service s do
+    supports :restart => true, :reload => true
+    provider Chef::Provider::Service::Upstart if platform?('ubuntu') && node['platform_version'].to_f == 14.04
+    pattern 'smbd|nmbd' if node['platform'] =~ /^arch$/
+    action [:enable, :start]
   end
 end

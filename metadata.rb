@@ -1,15 +1,14 @@
-name             "samba"
-maintainer       "Opscode, Inc."
-maintainer_email "cookbooks@opscode.com"
-license          "Apache 2.0"
-description      "Installs/Configures samba"
-long_description IO.read(File.join(File.dirname(__FILE__), 'README.md'))
-version          "0.11.0"
+name             'samba'
+maintainer       'Joshua Timberman'
+maintainer_email 'cookbooks@housepub.org'
+license          'Apache 2.0'
+description      'Installs/Configures samba'
+version          '0.12.0'
 
-recipe "samba::default", "Includes the samba::client recipe"
-recipe "samba::client", "Installs smbclient package"
-recipe "samba::server", "Installs samba server packages and configures smb.conf"
+recipe 'samba::default', 'Includes the samba::client recipe'
+recipe 'samba::client', 'Installs smbclient package'
+recipe 'samba::server', 'Installs samba server packages and configures smb.conf'
 
-%w{ arch debian ubuntu centos fedora redhat scientific amazon }.each do |os|
+%w{ arch debian ubuntu centos fedora redhat scientific amazon raspbian }.each do |os|
   supports os
 end

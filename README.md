@@ -10,9 +10,9 @@ Assumes Samba version 3.
 
 Should work on Debian-family, Red Hat-family and ArchLinux systems.
 
-Uses Chef Server for data bag to build configuration file shares.
+Uses Chef Server for data bag to build configuration file shares. Chef Zero should work as long as data bags are set up per __Usage__ below.
 
-Requires a users data bag for the users when the password backend is not LDAP. If using the Opscode `users` cookbook, this already needs to exist, though a password needs to be specified for Samba.
+Requires a users data bag for the users when the password backend is not LDAP. If using the `users` [cookbook](https://supermarket.getchef.com/cookbooks/users), this already needs to exist, though a password needs to be specified for Samba.
 
 Limitations
 ===========
@@ -22,6 +22,8 @@ Does not (yet) integrate with LDAP/AD.
 Uses plaintext passwords for the user data bag entry to create the SMB users if the password backend is tdbsam or smbpasswd. See below under usage.
 
 Does not modify the Samba daemons to launch (i.e., ArchLinux's `/etc/conf.d/samba` `SAMBA_DAMONS`).
+
+Samba 4 may work with or without modification.
 
 Attributes
 ==========
@@ -43,6 +45,7 @@ The attributes are used to set up the default values in the smb.conf, and set de
 * `node["samba"]["log_dir"]` - Location of Samba logs, default "/var/log/samba/%m.log".
 * `node["samba"]["shares_data_bag"]` - the name of the data bag that contains the shares information, default "samba". See `Usage` below.
 * `node["samba"]["users_data_bag"]` - the name of the data bag that contains user details, default "users". See `Usage` below.
+* `node["samba"]["options"]` - the list of additional options, default {'unix charset' => 'UTF8'}. (optional)
 
 Recipes
 =======
@@ -112,6 +115,17 @@ Example data bag item for a user. Note that the user must exist on the system al
     }
 
 Unfortunately, smbpasswd does not take a hashed password as an argument - the password is echoed and piped to the smbpasswd program. This is a limitation of Samba.
+
+Testing
+=======
+
+This cookbook is tested with:
+
+* [ChefSpec](http://sethvargo.github.io/chefspec/) for pre-convergence tests
+* [Foodcritic](http://www.foodcritic.io/) for cookbook lint checking (specific rules are disabled via source comments)
+* [RuboCop](http://batsov.com/rubocop/) with [specific rules disabled](https://github.com/jtimberman/samba-cookbook/blob/master/.rubocop.yml)
+* [Test Kitchen](http://kitchen.ci) for convergence testing per platform
+* [ServerSpec](http://serverspec.org) for post-convergence tests
 
 License and Author
 ==================
